@@ -1,3 +1,5 @@
 {
-	"generator.chaosgrid.chaosgrid": "ChaosGrid"
+	"generator.chaosgrid.chaosgrid": "ChaosGrid",
+	"slime.chaosgrid.cloth.bpc": "Blocks per chunk",
+	"slime.chaosgrid.cloth.general": "General"
 }

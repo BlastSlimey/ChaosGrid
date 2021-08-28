@@ -5,19 +5,23 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.world.ForgeWorldType;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.IExtensionPoint;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
 import net.minecraftforge.fml.event.lifecycle.InterModProcessEvent;
-import net.minecraftforge.fmlserverevents.FMLServerStartingEvent;
+import slime.chaosgrid.config.ChaosGridConfigScreen;
 import slime.chaosgrid.config.Configuration;
 import slime.chaosgrid.world.ChaosGridChunkGenerator;
 import slime.chaosgrid.world.ChaosGridFactory;
 import slime.chaosgrid.world.ChaosGridWorldType;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fmlclient.ConfigGuiHandler.ConfigGuiFactory;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,16 +30,29 @@ import org.apache.logging.log4j.Logger;
 public class ChaosGrid {
 	
     public static final Logger LOGGER = LogManager.getLogger();
+    private final FMLJavaModLoadingContext fmlcontext;
+    private final ModLoadingContext context;
 
     public ChaosGrid() {
     	
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::enqueueIMC);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::processIMC);
+    	fmlcontext = FMLJavaModLoadingContext.get();
+    	IEventBus bus = fmlcontext.getModEventBus();
+    	context = ModLoadingContext.get();
+    	
+    	bus.addListener(this::setup);
+    	bus.addListener(this::enqueueIMC);
+    	bus.addListener(this::processIMC);
 
         MinecraftForge.EVENT_BUS.register(this);
         
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Configuration.COMMON_SPEC);
+        context.registerConfig(ModConfig.Type.COMMON, Configuration.COMMON_SPEC);
+        
+        if (ModList.get().isLoaded("cloth_config"))
+            context.registerExtensionPoint(ConfigGuiFactory.class, () -> {
+            	return new ConfigGuiFactory((minecraft, screen) -> {
+            		return new ChaosGridConfigScreen(screen).getScreen();
+            	});
+            });
         
     }
 
@@ -51,13 +68,8 @@ public class ChaosGrid {
 
     private void processIMC(final InterModProcessEvent event) {
     	
-    	ChaosGridChunkGenerator.processRegistries();
+    	ChaosGridChunkGenerator.processLists();
     	
-    }
-    
-    @SubscribeEvent
-    public void onServerStarting(FMLServerStartingEvent event) {
-        
     }
     
     @Mod.EventBusSubscriber(bus=Mod.EventBusSubscriber.Bus.MOD)

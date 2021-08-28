@@ -2,6 +2,7 @@ package slime.chaosgrid.config;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -9,7 +10,6 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import net.minecraftforge.common.ForgeConfigSpec.IntValue;
 
@@ -32,48 +32,80 @@ public class Configuration {
 		
 		public final IntValue blocksPerChunk, minHeight, maxHeight;
 		public final ConfigValue<String> extraBlock;
-		public final BooleanValue putLootInChests;
-		public final ConfigValue<List<? extends String>> blockblacklist, itemblacklist;
+//		public final BooleanValue putLootInChests;
+		public final ConfigValue<List<? extends String>> blockBlacklist, /*itemBlacklist, featureBlacklist,*/ structureFeatureBlacklist;
+		
+		public final int blocksPerChunkDefault = 48,
+				minHeightDefault = 62,
+				maxHeightDefault = 64;
+		public final String extraBlockDefault = "minecraft:grass_block";
+		public final boolean putLootInChestsDefault = true;
+		public final String[] blockblacklistDefault = new String[] {"minecraft:bedrock", "minecraft:air", "minecraft:fire", 
+				"minecraft:soul_fire", "minecraft:end_portal", "minecraft:end_portal_frame", "minecraft:dragon_egg", 
+				"minecraft:command_block", "minecraft:barrier", "minecraft:light", "minecraft:end_gateway", 
+				"minecraft:repeating_command_block", "minecraft:chain_command_block", "minecraft:structure_void", 
+				"minecraft:void_air", "minecraft:cave_air", "minecraft:bubble_column", "minecraft:jigsaw", 
+				"minecraft:nether_portal"},
+				itemBlacklistDefault = new String[] {},
+				featureBlacklistDefault = new String[] {"minecraft:underwater_magma", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:", "minecraft:"},
+				structureFeatureBlacklistDefault = new String[] {"minecraft:mineshaft", "minecraft:mineshaft_mesa", 
+						"minecraft:swamp_hut", "minecraft:village_plains", "minecraft:village_desert", 
+						"minecraft:village_savanna", "minecraft:village_snowy", "minecraft:village_taiga"};
 		
 		private Common(ForgeConfigSpec.Builder builder) {
 			
 			blocksPerChunk = builder
 					.comment("The amount of blocks the game should try to spawn into every chunk (excluding the extraBlock)")
-					.defineInRange("blocksPerChunk", 16, 0, Integer.MAX_VALUE);
+					.defineInRange("blocksPerChunk", blocksPerChunkDefault, 0, Integer.MAX_VALUE);
 			
 			minHeight = builder
-					.comment("The minimum height (inclusive) blocks can spawn at (must be lower than or equal to maxHeight)")
-					.defineInRange("minHeight", 61, 0, 255);
+					.comment("_", "The minimum height (inclusive) blocks can spawn at (must be lower than or equal to maxHeight)")
+					.defineInRange("minHeight", minHeightDefault, 0, 255);
 			
 			maxHeight = builder
-					.comment("The maximum height (inclusive) blocks can spawn at (must be greater than or equal to minHeight)")
-					.defineInRange("maxHeight", 64, 0, 255);
+					.comment("_", "The maximum height (inclusive) blocks can spawn at (must be greater than or equal to minHeight)")
+					.defineInRange("maxHeight", maxHeightDefault, 0, 255);
 			
 			extraBlock = builder
-					.comment("A block that the game tries to spawn in every chunk at least once",
+					.comment("_", "A block that the game tries to spawn in every chunk at least once",
 							"It is not affected by the blacklist")
-					.define("extraBlock", "minecraft:grass_block");
+					.define("extraBlock", extraBlockDefault);
 			
-			putLootInChests = builder
-					.comment("(WIP) If true, every chest contains random items")
-					.define("putLootInChests", true);
+//			putLootInChests = builder
+//					.comment("_", "(WIP) If true, every chest contains random items")
+//					.define("putLootInChests", putLootInChestsDefault);
 			
-			List<String> blockblacklistdefault = Arrays.asList("minecraft:bedrock", "minecraft:air", "minecraft:fire", 
-					"minecraft:soul_fire", "minecraft:end_portal", "minecraft:end_portal_frame", "minecraft:dragon_egg", 
-					"minecraft:command_block", "minecraft:barrier", "minecraft:light", "minecraft:end_gateway", 
-					"minecraft:repeating_command_block", "minecraft:chain_command_block", "minecraft:structure_void", 
-					"minecraft:void_air", "minecraft:cave_air", "minecraft:bubble_column", "minecraft:jigsaw"),
-					itemblacklistdefault = Arrays.asList("minecraft:air", "minecraft:bedrock");
+			blockBlacklist = builder
+					.comment("_", "Blacklist of spawnable blocks")
+					.worldRestart()
+					.defineListAllowEmpty(split("blockblacklist"), blacklistSupplier(blockblacklistDefault), Configuration::isString);
 			
-			blockblacklist = builder
-					.comment("Blacklist of spawnable blocks")
-					.defineListAllowEmpty(split("blockblacklist"), () -> blockblacklistdefault, (o) -> o instanceof String);
+//			itemBlacklist = builder
+//					.comment("_", "(WIP) Blacklist of items that can appear in chests")
+//					.defineListAllowEmpty(split("itemblacklist"), blacklistSupplier(itemBlacklistDefault), Configuration::isString);
 			
-			itemblacklist = builder
-					.comment("(WIP) Blacklist of items that can appear in chests")
-					.defineListAllowEmpty(split("itemblacklist"), () -> itemblacklistdefault, (o) -> o instanceof String);
+//			featureBlacklist = builder
+//					.comment("_", "Blacklist of generated features")
+//					.defineListAllowEmpty(split("featureblacklist"), blacklistSupplier(featureBlacklistDefault), Configuration::isString);
+			
+			structureFeatureBlacklist = builder
+					.comment("_", "Blacklist of generated structures")
+					.worldRestart()
+					.defineListAllowEmpty(split("structurefeatureblacklist"), blacklistSupplier(structureFeatureBlacklistDefault), Configuration::isString);
 			
 		}
+		
+	}
+	
+	private static boolean isString(Object o) {
+		
+		return o instanceof String;
+		
+	}
+	
+	private static Supplier<List<? extends String>> blacklistSupplier(String[] list) {
+		
+		return () -> Arrays.asList(list);
 		
 	}
 	
